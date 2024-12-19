@@ -1,0 +1,113 @@
+.model small
+.stack 64
+.data
+entmsg db "Enter the quantity: $"
+totalrevenue dw 0
+array db 4 dup (?)  ; to store quantities
+price db 30         ; price per unit
+hund db 100         ; for extracting hundreds
+ten db 10           ; for extracting tens
+q1 db 0
+r1 db 0
+q2 db 0
+r2 db 0
+q3 db 0
+r3 db 0
+endmsg db 13,10,"The total revenue is: $", '$'
+.code
+main proc
+    mov ax, @data
+    mov ds, ax
+
+    ; Output entmsg
+    mov ah, 09h
+    lea dx, entmsg
+    int 21h
+
+    ; Input loop for 4 quantities
+    mov cx, 4
+    mov si, 0
+input:
+    mov ah, 01h           ; read a character
+    int 21h
+    sub al, 30h           ; convert ASCII to numeric
+    mov array[si], al     ; store in array
+    inc si
+    loop input
+
+    ; Debug: Show entered quantities
+    lea dx, array         ; display entered quantities for debugging
+    mov ah, 09h
+    int 21h
+
+    ; Start multiplying and accumulate total revenue
+    mov ax, 0             ; clear AX
+    mov si, 0             ; index for array
+    mov bx, 0             ; accumulator for revenue
+
+multiplication:
+    mov al, array[si]     ; load quantity
+    mul price             ; multiply by price
+    add bx, ax            ; add result to revenue
+    inc si
+    loop multiplication
+
+    mov totalrevenue, bx  ; store the result in totalrevenue
+
+    ; Debug: Show total revenue in hexadecimal for debugging
+    mov ax, totalrevenue
+    mov dx, 0
+    mov ah, 02h
+    ; Print revenue in hex (just for debugging purpose)
+    ; Convert ax to hexadecimal characters and output them
+
+    ; Divide the total revenue by 100 to get the hundreds place
+    mov ax, totalrevenue
+    xor dx, dx            ; clear dx before division
+    div hund              ; AX = quotient, DX = remainder
+    mov q1, al            ; store quotient (hundreds)
+    mov r1, dl            ; store remainder (tens)
+
+    ; Divide the remainder by 10 to get the tens place
+    mov al, r1
+    xor dx, dx            ; clear dx again before division
+    div ten               ; AX = quotient, DX = remainder
+    mov q2, al            ; store quotient (tens)
+    mov r2, dl            ; store remainder (ones)
+
+    ; Divide the remainder by 10 to get the ones place
+    mov al, r2
+    xor dx, dx            ; clear dx
+    div ten               ; AX = quotient, DX = remainder
+    mov q3, al            ; store quotient (ones)
+
+    ; Output the endmsg
+    mov ah, 09h
+    lea dx, endmsg
+    int 21h
+
+    ; Convert digits to ASCII and output them
+    add q2, 30h
+    add r2, 30h
+    add q3, 30h
+
+    ; Print hundreds
+    mov ah, 02h
+    mov dl, q2
+    int 21h
+
+    ; Print tens
+    mov ah, 02h
+    mov dl, r2
+    int 21h
+
+    ; Print ones
+    mov ah, 02h
+    mov dl, q3
+    int 21h
+
+    ; End program
+    mov ah, 4Ch
+    int 21h
+main endp
+end main
